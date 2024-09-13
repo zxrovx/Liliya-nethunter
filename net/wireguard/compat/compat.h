@@ -9,7 +9,6 @@
 #include <linux/kconfig.h>
 #include <linux/version.h>
 #include <linux/types.h>
-#include <linux/skbuff.h>
 #include <generated/utsrelease.h>
 
 #ifdef RHEL_MAJOR
@@ -17,9 +16,6 @@
 #define ISRHEL7
 #elif RHEL_MAJOR == 8
 #define ISRHEL8
-#if RHEL_MINOR >= 6
-#define ISCENTOS8S
-#endif
 #endif
 #endif
 #ifdef UTS_UBUNTU_RELEASE_ABI
@@ -842,6 +838,13 @@ static __always_inline void old_rcu_barrier(void)
 #define call_rcu call_rcu_bh
 #define rcu_barrier rcu_barrier_bh
 #define COMPAT_CANNOT_DEPRECIATE_BH_RCU
+#endif
+
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 10) && LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0) && !defined(ISRHEL8)) || LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 217)
+static inline void skb_mark_not_on_list(struct sk_buff *skb)
+{
+	skb->next = NULL;
+}
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 20, 0) && !defined(ISRHEL8)
