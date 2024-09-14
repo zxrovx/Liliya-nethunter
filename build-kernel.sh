@@ -65,19 +65,36 @@ setup_clang() {
             color_echo $YELLOW "Failed to clone using git, trying wget..."
             local file_name=$(basename "$clang_source")
             local file_ext="${file_name##*.}"
+
             if ! wget -O "$clang_dir_name/$file_name" "$clang_source"; then
                 handle_failure "Failed to download Clang using wget"
             fi
 
-            case "$file_ext" in
-                xz)
+            # Extract based on file extension
+            case "$file_name" in
+                *.tar.gz)
+                    color_echo $CYAN "Extracting .tar.gz file..."
+                    tar -xzf "$clang_dir_name/$file_name" -C "$clang_dir_name" --strip-components=1 || \
+                        handle_failure "Failed to extract .tar.gz file"
+                    ;;
+                *.tar.xz)
+                    color_echo $CYAN "Extracting .tar.xz file..."
+                    tar -xJf "$clang_dir_name/$file_name" -C "$clang_dir_name" --strip-components=1 || \
+                        handle_failure "Failed to extract .tar.xz file"
+                    ;;
+                *.tar.zst)
+                    color_echo $CYAN "Extracting .tar.zst file..."
+                    tar --zstd -xf "$clang_dir_name/$file_name" -C "$clang_dir_name" --strip-components=1 || \
+                        handle_failure "Failed to extract .tar.zst file"
+                    ;;
+                *.zip)
+                    color_echo $CYAN "Extracting .zip file..."
+                    unzip "$clang_dir_name/$file_name" -d "$clang_dir_name" || \
+                        handle_failure "Failed to extract .zip file"
+                    ;;
+                *.xz)
                     color_echo $CYAN "Extracting .xz file..."
                     unxz "$clang_dir_name/$file_name" || handle_failure "Failed to extract .xz file"
-                    ;;
-                gz)
-                    color_echo $CYAN "Extracting .tar.gz file..."
-                    tar -xvf "$clang_dir_name/$file_name" -C "$clang_dir_name" --strip-components=1 || \
-                        handle_failure "Failed to extract .tar.gz file"
                     ;;
                 *)
                     handle_failure "Unsupported file extension: $file_ext"
@@ -93,7 +110,6 @@ setup_clang() {
 
     export PATH="$(pwd)/$clang_dir_name/bin:$PATH"
 }
-
 
 # Function to clean up unnecessary files and directories
 cleanup() {
