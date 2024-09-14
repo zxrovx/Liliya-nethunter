@@ -134,7 +134,7 @@ regenerate_defconfig() {
 build_kernel() {
     local defconfig="vendor/RMX1911_defconfig"  # Default defconfig location
 
-    color_echo $CYAN "Building the kernel..."
+    color_echo $CYAN "Building the kernel with defconfig: $defconfig..."
     make clean
     make mrproper
     local build_options=$1
@@ -150,11 +150,11 @@ build_kernel() {
             HOSTCFLAGS="-O3 -fprofile-generate -flto" \
             HOSTLDFLAGS="-O3 -fprofile-generate -flto" \
             LOCALVERSION="-realme_trinket" \
-            Image.gz-dtb dtbo.img 2>&1 | tee error.log; then
+            Image.gz dtb.img dtbo.img 2>&1 | tee error.log; then
             handle_failure "Build failed. Skipping packaging."
         fi
-    elif [ "$build_options" == "polly" ]; then
-        COMPRESSION_TYPE="POLLY"
+    elif [ "$build_options" == "llvm-polly" ]; then
+        COMPRESSION_TYPE="LLVM-POLLY"
         color_echo $CYAN "Building with LLVM Polly optimization..."
         if ! make -j$(nproc) O=out ARCH=arm64 "$defconfig" \
             CC=clang CLANG_TRIPLE=aarch64-linux-gnu- \
@@ -167,9 +167,23 @@ build_kernel() {
             Image.gz dtb.img dtbo.img 2>&1 | tee error.log; then
             handle_failure "Build failed. Skipping packaging."
         fi
+    elif [ "$build_options" == "polly-clang" ]; then
+        COMPRESSION_TYPE="POLLY_CLANG"
+        color_echo $CYAN "Building with LLVM Polly Clang optimization..."
+        if ! make -j$(nproc) O=out ARCH=arm64 "$defconfig" \
+            CC=clang CLANG_TRIPLE=aarch64-linux-gnu- \
+            CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
+            CLANG_LD_PATH="$CLANG_DIR/lib" LLVM=1 \
+            POLLY_CLANG=1 \
+            HOSTCFLAGS="-O3" \
+            HOSTLDFLAGS="-O3" \
+            LOCALVERSION="-realme_trinket" \
+            Image.gz dtb.img dtbo.img 2>&1 | tee error.log; then
+            handle_failure "Build failed. Skipping packaging."
+        fi
     else
         COMPRESSION_TYPE="LLVM"
-        color_echo $CYAN "Building with default compression options..."
+        color_echo $CYAN "Building with default LLVM compression options..."
         if ! make -j$(nproc) O=out ARCH=arm64 "$defconfig" \
             CC=clang CLANG_TRIPLE=aarch64-linux-gnu- \
             CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
@@ -177,7 +191,7 @@ build_kernel() {
             HOSTCFLAGS="-O3" \
             HOSTLDFLAGS="-O3" \
             LOCALVERSION="-realme_trinket" \
-            Image.gz-dtb dtbo.img 2>&1 | tee error.log; then
+            Image.gz dtb.img dtbo.img 2>&1 | tee error.log; then
             handle_failure "Build failed. Skipping packaging."
         fi
     fi
