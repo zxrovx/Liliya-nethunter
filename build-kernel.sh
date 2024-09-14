@@ -309,7 +309,7 @@ select_and_setup_clang() {
             CLANG_DIR="$(pwd)/weebx-clang"
             ;;
         neutron)
-            setup_clang "https://gitlab.com/z3zens/neutron-clang.git" "neutron-clang"
+            setup_clang "https://github.com/Neutron-Toolchains/clang-build-catalogue/releases/download/10032024/neutron-clang-10032024.tar.zst" "neutron-clang"
             CLANG_DIR="$(pwd)/neutron-clang"
             ;;
         proton)
